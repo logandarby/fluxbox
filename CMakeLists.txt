@@ -31,7 +31,7 @@ add_subdirectory(extern/glfw)
 add_subdirectory(extern/glm)
 add_subdirectory(extern/spdlog)
 add_subdirectory(extern/imgui)
-add_subdirectory(extern/stb)
+add_subdirectory(extern/stb-cmake)
 
 # Sources
 # MY_SOURCES is defined to be a list of all the source files in src
