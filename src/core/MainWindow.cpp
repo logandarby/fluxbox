@@ -71,7 +71,7 @@ MainWindow::MainWindow(
     GL_CALL(glDepthFunc(GL_LEQUAL));
 
     glfwSetWindowUserPointer(m_window, &m_data);
-    toggleCursorMode(GL::CursorMode::Disabled);
+    toggleCursorMode(GL::CursorMode::Normal);
     initEventHandling();
 
     m_isRunning = true;

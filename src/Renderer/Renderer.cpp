@@ -1,7 +1,6 @@
 #include "Renderer.h"
-#include "Model/Model.h"
-#include "core/Core.h"
-#include "core/GLCore.h"
+#include "Core/Core.h"
+#include "Core/GLCore.h"
 
 void Renderer::clear() {
     GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
@@ -10,6 +9,7 @@ void Renderer::clear() {
 void Renderer::draw(
     const VertexArray& vao, const IndexBuffer& ib, const Shader& shader
 ) {
+    GL_CALL(glClearColor(0.1f, 0.1f, 0.1f, 1.0f));
     shader.bind();
     vao.bind();
     ib.bind();
@@ -33,4 +33,8 @@ unsigned int Renderer::getMaxTextureSlots() {
     int maxTextureSlots;
     GL_CALL(glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxTextureSlots));
     return static_cast<unsigned int>(maxTextureSlots);
+}
+
+void Renderer::bindDefaultFramebuffer() {
+    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 }

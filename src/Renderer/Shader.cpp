@@ -6,6 +6,7 @@
 
 Shader::Shader(const std::string& fileName) :
     m_rendererId(0), m_filePath(fileName) {
+    LOG_CORE_INFO("Parsing shader file: {}", fileName);
     ShaderProgramSource source = parseShader(fileName);
     m_rendererId = createShader(source);
 }
@@ -66,6 +67,12 @@ unsigned int Shader::compileShader(
 ShaderProgramSource Shader::parseShader(const std::string& fileName) {
     using namespace std;
     fstream stream(fileName);
+
+    if (stream.fail()) {
+        throw std::runtime_error(fmt::format(
+            "Shader file {} does not exist or could not be opened", fileName
+        ));
+    }
 
     enum class ShaderType { NONE = -1, VERTEX = 0, FRAGMENT = 1 };
 
@@ -134,68 +141,6 @@ Shader& Shader::setUniform1i(const std::string& name, const int i) {
 
 Shader& Shader::setUniform1f(const std::string& name, const float i) {
     GL_CALL(glUniform1f(getUniformLocation(name), i));
-    return *this;
-}
-
-Shader& Shader::setLight(
-    const std::string& name, const DirectionalLight& light
-) {
-    setUniform3f(fmt::format("{}.direction", name), light.direction);
-    setUniform3f(fmt::format("{}.ambient", name), light.ambient);
-    setUniform3f(fmt::format("{}.diffuse", name), light.diffuse);
-    setUniform3f(fmt::format("{}.specular", name), light.specular);
-    return *this;
-}
-
-Shader& Shader::setLight(const std::string& name, const PointLight& light) {
-    setUniform3f(fmt::format("{}.position", name), light.position);
-    setUniform3f(fmt::format("{}.ambient", name), light.ambient);
-    setUniform3f(fmt::format("{}.diffuse", name), light.diffuse);
-    setUniform3f(fmt::format("{}.specular", name), light.specular);
-    setUniform1f(fmt::format("{}.constant", name), light.constant);
-    setUniform1f(fmt::format("{}.linear", name), light.linear);
-    setUniform1f(fmt::format("{}.quadratic", name), light.quadratic);
-    return *this;
-}
-
-template <typename T>
-Shader& Shader::setMaterial(const std::string& name, const T& material) {
-    throw std::runtime_error(fmt::format(
-        "Shader does not have implementation for 'setMaterial' for type {}",
-        typeid(T).name()
-    ));
-    return *this;
-}
-
-template <>
-Shader& Shader::setMaterial<Material>(
-    const std::string& name, const Material& material
-) {
-    setUniform1i(fmt::format("{}.diffuse", name), material.texture);
-    setUniform3f(fmt::format("{}.specular", name), material.specular);
-    setUniform1f(fmt::format("{}.shininess", name), material.shininess);
-    return *this;
-}
-
-template <>
-Shader& Shader::setMaterial<SpecMaterial>(
-    const std::string& name, const SpecMaterial& material
-) {
-    setUniform1i(fmt::format("{}.diffuse", name), material.texture);
-    setUniform1i(fmt::format("{}.specular", name), material.specular);
-    setUniform1f(fmt::format("{}.shininess", name), material.shininess);
-    return *this;
-}
-
-Shader& Shader::setMVP(
-    const std::string& name, const glm::mat4& model, const glm::mat4& view,
-    const glm::mat4& projection
-) {
-    const glm::mat3 normal = glm::mat3(glm::transpose(glm::inverse(model)));
-    setUniformMat4(fmt::format("{}.model", name), model);
-    setUniformMat4(fmt::format("{}.view", name), view);
-    setUniformMat4(fmt::format("{}.projection", name), projection);
-    setUniformMat3(fmt::format("{}.normal", name), normal);
     return *this;
 }
 

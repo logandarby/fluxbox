@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Scene/Light.h"
-#include "Scene/Material.h"
 #include <glm/glm.hpp>
 #include <spdlog/fmt/fmt.h>
 #include <memory>
@@ -20,16 +18,6 @@ public:
 
     void bind() const;
     void unbind() const;
-
-    // Set struct Uniforms
-    Shader& setLight(const std::string& name, const DirectionalLight& light);
-    Shader& setLight(const std::string& name, const PointLight& light);
-    template <typename T>  // Where T is a material
-    Shader& setMaterial(const std::string& name, const T& material);
-    Shader& setMVP(
-        const std::string& name, const glm::mat4& model, const glm::mat4& view,
-        const glm::mat4& projection
-    );
 
     // Set primitive Uniforms
     Shader& setUniform4f(

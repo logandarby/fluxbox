@@ -4,7 +4,6 @@
 #include "RendererTypes.h"
 #include "Shader.h"
 #include "VertexArray.h"
-#include "Model/Model.h"
 
 class Renderer {
 public:
@@ -15,4 +14,5 @@ public:
     static void getViewport(int x, int y, int width, int height);
     static void setDepthTest(bool enabled);
     static unsigned int getMaxTextureSlots();
+    static void bindDefaultFramebuffer();
 };

@@ -1,6 +1,6 @@
 # FluxLab
 
-A pretty fluid simulator 🌊✒️
+A pretty fluid simulator 💧🧬🌊
 
 ## Running
 

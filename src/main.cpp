@@ -1,28 +1,18 @@
 
 
 #include "Application.h"
-#include "Scene/Tests/LightingScene.h"
+#include "Scene/FluidScene.h"
 #include <algorithm>
 #include <ranges>
 
-/*
-        Things to do:
-        - [] create material class which stores a shader and its uniforms. This
-   way I won't have to pass in raw shaders
-        - [] create test class hooked up to ImGui debug menu to view different
-   test screens
-        - [] create an import for wavefront files, and render one
-        - [] cleanup the code significantly
-*/
-
 static const ApplicationSpec APP_SPEC = { .width = 960,
                                           .height = 540,
-                                          .name = "OpenGL Sandbox" };
+                                          .name = "FluxLab" };
 
 void runApplication() {
     Application app(APP_SPEC);
-    auto lightingScene = std::make_shared<LightingScene>(APP_SPEC);
-    app.setScene(lightingScene);
+    auto fluidScene = std::make_shared<FluidScene>(APP_SPEC);
+    app.setScene(fluidScene);
 
     app.run();
 }
