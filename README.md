@@ -1,7 +1,15 @@
-# gl-sandbox
-A repo to experiment with GPU tech and openGL functionalities
+# FluxLab
+
+A pretty fluid simulator 🌊✒️
 
 ## Running
+
+Make to to install the submodules as well when cloning
+
+```
+git clone --recurse-submodules https://github.com/logandarby/fluxbox.git
+```
+## Building
 
 Cmake is used to build and run the project. Make sure all commands are run in git bash.
 
