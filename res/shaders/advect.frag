@@ -12,7 +12,7 @@ uniform sampler2D u_velocity;
 uniform sampler2D u_field;   // quantity to advect
 
 void main() {
-    // vec2 lastPos = v_texCoord - u_delta_t * u_grid_scale * texture2D(u_velocity, v_texCoord).xy;
-    vec2 lastPos = v_texCoord - 0.0000 * texture2D(u_velocity, v_texCoord).xy;
+    vec2 lastPos = v_texCoord - u_deltaT * u_gridScale * texture2D(u_velocity, v_texCoord).xy;
+    // vec2 lastPos = v_texCoord - 0.1 * texture2D(u_velocity, v_texCoord).xy;
     FragColor = u_dissipation * texture2D(u_field, lastPos);
 }

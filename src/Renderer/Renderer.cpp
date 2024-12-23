@@ -6,6 +6,10 @@ void Renderer::clear() {
     GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 }
 
+void Renderer::clearDepthBuffer() {
+    GL_CALL(glClear(GL_DEPTH_BUFFER_BIT));
+}
+
 void Renderer::draw(
     const VertexArray& vao, const IndexBuffer& ib, const Shader& shader
 ) {

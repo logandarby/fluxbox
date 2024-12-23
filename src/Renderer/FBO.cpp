@@ -23,7 +23,7 @@ FBOTex::FBOTex(const FBOSpec& spec) :
     );
 
     GL_CALL(glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA,
+        GL_TEXTURE_2D, 0, GL_RGBA8_SNORM, m_width, m_height, 0, GL_RGBA,
         GL_UNSIGNED_BYTE, nullptr
     ));
 

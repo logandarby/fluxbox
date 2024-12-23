@@ -8,6 +8,7 @@
 class Renderer {
 public:
     static void clear();
+    static void clearDepthBuffer();
     static void draw(
         const VertexArray& vao, const IndexBuffer& ib, const Shader& shader
     );

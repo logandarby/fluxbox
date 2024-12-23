@@ -19,6 +19,7 @@ private:
     MainWindow m_window;
     WeakRef<Scene> m_currentScene;
     Timestep::CurrentTime m_lastTime;
+    size_t m_frameCount;
 
 private:
     void onEvent(Event& e);

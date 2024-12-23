@@ -171,7 +171,8 @@ public:
         fboTex.bindTexture(FBO_TEX_SLOT);
     };
 
-    virtual void onRender(const float timestep) override {
+    virtual void onRender(const float timestep, const float frameCount)
+        override {
         if (m_isMenuOpen) {
             onImguiRender();
         }

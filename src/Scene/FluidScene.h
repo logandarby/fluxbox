@@ -12,16 +12,19 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 static const int VELOCITY_SLOT = 0;
+static const int PRESSURE_SLOT = 1;
+static const int DIVERGENCE_SLOT = 2;
+static const int PRESSURE_COPY_SLOT = 3;
 
 struct SimulationVars {
-    float dissipation = 1.0f;
-    float gridScale = 0.1f;
+    float dissipation;
+    float gridScale;
+    float jacobiIterations;
 }
 
-static const DEFAULT_SIMULATION_VARS = SimulationVars{
-    .dissipation = 1.0f,
-    .gridScale = 1.0f,
-};
+static const DEFAULT_SIMULATION_VARS = SimulationVars{ .dissipation = 0.99f,
+                                                       .gridScale = 0.1f,
+                                                       .jacobiIterations = 80 };
 
 class FluidScene : public Scene {
 public:
@@ -32,16 +35,11 @@ public:
         Scene("FluxLab"), m_spec{ spec }, m_vars{ vars } {};
 
     virtual void onInit() override {
-        m_velocity.bindTexture(VELOCITY_SLOT);
-    };
-    virtual void onDetach() override {};
-    virtual void onRender(const float timestep) override {
-        m_velocity.bindTexture(VELOCITY_SLOT);
-        m_velocity.bindFBO();
-
+        // Draw initial velocity rectangle
+        m_velocityFBO.bindTexture(VELOCITY_SLOT);
+        m_velocityFBO.bindFBO();
         Renderer::clear();
         Renderer::setDepthTest(true);
-
         m_colorFragmentShader.bind();
         m_colorFragmentShader
             .setUniformMat4(
@@ -49,35 +47,93 @@ public:
             )
             .setUniform3f("u_color", 1.0f, 1.0f, 1.0f);
         Renderer::draw(m_rectVAO, m_rectIb, m_colorFragmentShader);
+    };
+    virtual void onDetach() override {};
+    virtual void onRender(const float timestep, const size_t frameCount)
+        override {
+        const glm::vec2 rdv{ 1.0f / m_spec.width, 1.0f / m_spec.height };
+        Renderer::bindDefaultFramebuffer();
+        Renderer::clear();
+        if (frameCount == 0) {
+            m_velocityFBO.bindTexture(VELOCITY_SLOT);
+            m_velocityFBO.bindFBO();
 
-        // Render stuff
+            // Advect
+            // m_velocity.bindTexture(VELOCITY_SLOT);
+            // m_velocity.bindFBO();
 
-        // advect
+            // m_advectionShader.bind();
+            // m_advectionShader.setUniform1i("u_field", VELOCITY_SLOT)
+            //     .setUniform1i("u_velocity", VELOCITY_SLOT)
+            //     .setUniform1f("u_deltaT", timestep)
+            //     .setUniform1f("u_dissipation", m_vars.dissipation)
+            //     .setUniform1f("u_gridScale", m_vars.gridScale);
+            // Renderer::draw(m_rectVAO, m_rectIb, m_advectionShader);
+            m_velocityFBO.unbind();
 
-        m_velocity.bindTexture(VELOCITY_SLOT);
-        m_velocity.bindFBO();
+            // diffuse
+            // add forces (mouse)
 
-        // Renderer::clear();
-        // Renderer::setDepthTest(true);
+            // Compute Pressure -- Velocity Divergence
+            m_divergenceFBO.bindTexture(DIVERGENCE_SLOT);
+            m_divergenceFBO.bindFBO();
+            m_velocityFBO.bindTexture(VELOCITY_SLOT);
+            Renderer::clear();
+            m_divergenceShader.bind();
+            m_divergenceShader.setUniform1i("u_field", VELOCITY_SLOT)
+                .setUniform2f("u_stride", rdv)
+                .setUniform1f("u_gridScale", 1 / m_vars.gridScale);
+            Renderer::draw(m_rectVAO, m_rectIb, m_divergenceShader);
+            m_divergenceFBO.unbind();
 
-        // m_advectionShader.bind();
-        // m_advectionShader.setUniform1i("u_field", VELOCITY_SLOT)
-        //     .setUniform1i("u_velocity", VELOCITY_SLOT)
-        //     .setUniform1f("u_delta_t", timestep)
-        //     .setUniform1f("u_dissipation", m_vars.dissipation)
-        //     .setUniform1f("u_grid_scale", m_vars.gridScale);
-        // Renderer::draw(m_rectVAO, m_rectIb, m_advectionShader);
+            // Compute Pressure -- Solve for Pressure in Poisson Equation
+            const float alpha =
+                m_vars.gridScale * m_vars.gridScale / (timestep);
+            const float beta = alpha + 4.0f;
+            LOG_CORE_INFO(
+                "alpha: {}, gridScale: {}, timestep: {}, beta: {}", alpha,
+                m_vars.gridScale, timestep, 1 / beta
+            );
+            m_pressureFBO.bindTexture(PRESSURE_SLOT);
+            m_divergenceFBO.bindTexture(DIVERGENCE_SLOT);
+            m_pressureFBO.bindFBO();
+            Renderer::clear();
+            m_poissonShader.bind();
+            for (size_t i = 0; i < m_vars.jacobiIterations; i++) {
+                // Copy Pressure
+                // m_bufferFBO.bindTexture(PRESSURE_COPY_SLOT);
+                // m_bufferFBO.bindFBO();
+                // m_pressureFBO.bindTexture(PRESSURE_SLOT);
+                // m_copyShader.bind();
+                // m_copyShader.setUniform1i("u_texture", PRESSURE_SLOT);
+                // Renderer::draw(m_rectVAO, m_rectIb, m_copyShader);
 
-        // diffuse
-        // add forces (mouse)
-        // compute pressure
-        // subtract pressure gradient
+                // Calculate Pressure
+                m_pressureFBO.bindTexture(PRESSURE_SLOT);
+                m_pressureFBO.bindFBO();
+                m_bufferFBO.bindTexture(PRESSURE_COPY_SLOT);
+                m_divergenceFBO.bindTexture(DIVERGENCE_SLOT);
+                m_poissonShader.bind();
+                m_poissonShader.setUniform1f("u_alpha", alpha)
+                    .setUniform2f("u_stride", rdv)
+                    .setUniform1f("u_rBeta", 1 / beta)
+                    .setUniform1i("u_b", DIVERGENCE_SLOT)
+                    .setUniform1i("u_x", PRESSURE_COPY_SLOT);
+                Renderer::draw(m_rectVAO, m_rectIb, m_poissonShader);
+            }
+            m_pressureFBO.unbind();
+            m_divergenceFBO.unbind();
 
+            // Compute Pressure --Subtract pressure gradient from poisson result
+        }
         Renderer::bindDefaultFramebuffer();
         Renderer::setDepthTest(false);
-        m_velocity.bindTexture(VELOCITY_SLOT);
+        // m_velocityFBO.bindTexture(VELOCITY_SLOT);
+        // m_divergenceFBO.bindTexture(DIVERGENCE_SLOT);
+        m_pressureFBO.bindTexture(PRESSURE_SLOT);
         m_framebufferShader.bind();
-        m_framebufferShader.setUniform1i("u_texture", VELOCITY_SLOT);
+        // m_framebufferShader.setUniform1i("u_texture", PRESSURE_SLOT);
+        m_framebufferShader.setUniform1i("u_texture", PRESSURE_SLOT);
 
         // Renderer::getViewport(0, 0, m_spec.width, m_spec.height);
 
@@ -105,7 +161,24 @@ private:
     Shader m_colorFragmentShader{ RESOURCES_PATH "shaders/color.glsl" };
     Shader m_advectionShader{ RESOURCES_PATH "shaders/commonVert.vert",
                               RESOURCES_PATH "shaders/advect.frag" };
-    FBOTex m_velocity{ {
+    Shader m_divergenceShader{ RESOURCES_PATH "shaders/commonVert.vert",
+                               RESOURCES_PATH "shaders/divergence.frag" };
+    Shader m_poissonShader{ RESOURCES_PATH "shaders/commonVert.vert",
+                            RESOURCES_PATH "shaders/solveJacobi.frag" };
+    Shader m_copyShader{ RESOURCES_PATH "shaders/copy.glsl" };
+    FBOTex m_velocityFBO{ {
+        .width = static_cast<unsigned int>(m_spec.width),
+        .height = static_cast<unsigned int>(m_spec.height),
+    } };
+    FBOTex m_pressureFBO{ {
+        .width = static_cast<unsigned int>(m_spec.width),
+        .height = static_cast<unsigned int>(m_spec.height),
+    } };
+    FBOTex m_divergenceFBO{ {
+        .width = static_cast<unsigned int>(m_spec.width),
+        .height = static_cast<unsigned int>(m_spec.height),
+    } };
+    FBOTex m_bufferFBO{ {
         .width = static_cast<unsigned int>(m_spec.width),
         .height = static_cast<unsigned int>(m_spec.height),
     } };

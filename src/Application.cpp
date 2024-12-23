@@ -12,6 +12,8 @@ void Application::keyPressCallback(KeyPressEvent& e) {
 }
 
 Application::Application(const ApplicationSpec& spec) :
+    m_frameCount{ 0 },
+    m_lastTime{ Timestep::getCurrentTime() },
     m_width{ spec.width },
     m_height{ spec.height },
     m_appName{ spec.name },
@@ -46,11 +48,11 @@ void Application::run() {
     m_window.whileOpen([&]() -> void {
         const auto currentTime = Timestep::getCurrentTime();
         const float deltaTime =
-            Timestep::getDeltaTimeMs(currentTime, m_lastTime);
+            Timestep::getDeltaTimeS(currentTime, m_lastTime);
         if (auto scene = m_currentScene.lock()) {
-            Renderer::clear();
-            scene->onRender(deltaTime);
+            scene->onRender(deltaTime, m_frameCount);
         }
         m_lastTime = currentTime;
+        m_frameCount++;
     });
 }

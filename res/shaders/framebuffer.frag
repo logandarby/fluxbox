@@ -6,5 +6,5 @@ in vec2 v_texCoord;
 uniform sampler2D u_texture;
 
 void main() {
-    FragColor = texture2D(u_texture, v_texCoord);
+    FragColor = abs(texture2D(u_texture, v_texCoord));
 }
