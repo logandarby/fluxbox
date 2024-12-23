@@ -89,6 +89,8 @@
     "xutility": "cpp",
     "regex": "cpp",
     "ranges": "cpp",
-    "coroutine": "cpp"
+    "coroutine": "cpp",
+    "set": "cpp",
+    "unordered_set": "cpp"
   }
 }

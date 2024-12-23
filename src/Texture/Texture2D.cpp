@@ -9,6 +9,28 @@ Texture2D::Texture2D(const std::string& filePath) :
     m_width = imageData.width;
     m_height = imageData.height;
 
+    init();
+
+    GL_CALL(glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA,
+        GL_UNSIGNED_BYTE, imageData.imageData.get()
+    ));
+    unbind();
+}
+
+Texture2D::Texture2D(const unsigned int width, const unsigned int height) :
+    m_width{ width }, m_height{ height } {
+    init();
+
+    GL_CALL(glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA,
+        GL_UNSIGNED_BYTE, nullptr
+    ));
+
+    unbind();
+}
+
+void Texture2D::init() {
     GL_CALL(glGenTextures(1, &m_rendererId));
     LOG_CORE_INFO("texture renderer id {}", m_rendererId);
     GL_CALL(glBindTexture(GL_TEXTURE_2D, m_rendererId));
@@ -18,12 +40,6 @@ Texture2D::Texture2D(const std::string& filePath) :
     GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
     );
     GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE))
-
-    GL_CALL(glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA,
-        GL_UNSIGNED_BYTE, imageData.imageData.get()
-    ));
-    unbind();
 }
 
 Texture2D::~Texture2D() {

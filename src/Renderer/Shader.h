@@ -6,14 +6,24 @@
 #include <string>
 #include <unordered_map>
 
+static const std::string SHADER_DRECTIVE = "#shader";
+static const std::string VERTEX_DELIMITER = "vertex";
+static const std::string FRAGMENT_DELIMITER = "fragment";
+
 struct ShaderProgramSource {
     std::string vertexSource;
     std::string fragmentSource;
 };
 
+class ShaderException : public std::runtime_error {
+public:
+    ShaderException(const std::string& message) : std::runtime_error(message) {}
+};
+
 class Shader {
 public:
     Shader(const std::string& fileName);
+    Shader(const std::string& vertexSrc, const std::string& fragmentSrc);
     ~Shader();
 
     void bind() const;
@@ -41,7 +51,6 @@ public:
 
 private:
     unsigned int m_rendererId;
-    const std::string m_filePath;
     std::unordered_map<std::string, int> m_locationMap;
 
     static unsigned int createShader(const ShaderProgramSource& source);
@@ -49,5 +58,8 @@ private:
         const unsigned int shaderType, const std::string& source
     );
     static ShaderProgramSource parseShader(const std::string& fileName);
+    static ShaderProgramSource parseShader(
+        const std::string& vertexSrc, const std::string& fragmentSrc
+    );
     int getUniformLocation(const std::string& name);
 };

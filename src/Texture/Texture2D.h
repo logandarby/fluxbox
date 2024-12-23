@@ -6,6 +6,7 @@
 class Texture2D : public Texture {
 public:
     Texture2D(const std::string& filePath);
+    Texture2D(const unsigned int width, const unsigned int height);
     ~Texture2D();
 
     virtual void bind(unsigned int slot = 0) const override;
@@ -20,5 +21,8 @@ public:
 
 private:
     unsigned int m_rendererId;
-    int m_width, m_height, m_BPP;
+    size_t m_width, m_height, m_BPP;
+
+private:
+    void init();
 };

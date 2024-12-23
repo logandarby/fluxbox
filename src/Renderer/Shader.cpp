@@ -4,10 +4,17 @@
 #include <fstream>
 #include <sstream>
 
-Shader::Shader(const std::string& fileName) :
-    m_rendererId(0), m_filePath(fileName) {
+Shader::Shader(const std::string& fileName) : m_rendererId(0) {
     LOG_CORE_INFO("Parsing shader file: {}", fileName);
     ShaderProgramSource source = parseShader(fileName);
+    m_rendererId = createShader(source);
+}
+
+Shader::Shader(const std::string& vertexSrc, const std::string& fragmentSrc) {
+    LOG_CORE_INFO(
+        "Parsing shader files: Vertex: {}, Fragment: {}", vertexSrc, fragmentSrc
+    );
+    ShaderProgramSource source = parseShader(vertexSrc, fragmentSrc);
     m_rendererId = createShader(source);
 }
 
@@ -69,7 +76,7 @@ ShaderProgramSource Shader::parseShader(const std::string& fileName) {
     fstream stream(fileName);
 
     if (stream.fail()) {
-        throw std::runtime_error(fmt::format(
+        throw ShaderException(fmt::format(
             "Shader file {} does not exist or could not be opened", fileName
         ));
     }
@@ -80,11 +87,11 @@ ShaderProgramSource Shader::parseShader(const std::string& fileName) {
     stringstream ss[2];
     ShaderType shaderType = ShaderType::NONE;
     while (getline(stream, line)) {
-        if (line.find("#shader") != string::npos) {
-            if (line.find("vertex") != string::npos) {
+        if (line.find(SHADER_DRECTIVE) != string::npos) {
+            if (line.find(VERTEX_DELIMITER) != string::npos) {
                 shaderType = ShaderType::VERTEX;
             }
-            if (line.find("fragment") != string::npos) {
+            if (line.find(FRAGMENT_DELIMITER) != string::npos) {
                 shaderType = ShaderType::FRAGMENT;
             }
         } else {
@@ -93,12 +100,48 @@ ShaderProgramSource Shader::parseShader(const std::string& fileName) {
     }
     const size_t size = sizeof(ss) / sizeof(ss[0]);
     if (size != 2) {
-        throw std::runtime_error(fmt::format(
+        throw ShaderException(fmt::format(
             "Shader file {} does not contain both vertex and fragment shaders",
             fileName
         ));
     }
     return { ss[0].str(), ss[1].str() };
+}
+
+ShaderProgramSource Shader::parseShader(
+    const std::string& vertexSrc, const std::string& fragmentSrc
+) {
+    using namespace std;
+    stringstream ss[2];
+    string line;
+    fstream vertexStream(vertexSrc);
+    if (vertexStream.fail()) {
+        throw ShaderException(fmt::format(
+            "Vertex shader file {} does not exist or could not be opened",
+            vertexSrc
+        ));
+    }
+    fstream fragmentStream(fragmentSrc);
+    if (fragmentStream.fail()) {
+        throw ShaderException(fmt::format(
+            "Fragment shader file {} does not exist or could not be opened",
+            fragmentSrc
+        ));
+    }
+    while (getline(vertexStream, line)) {
+        ss[0] << line << endl;
+    }
+    while (getline(fragmentStream, line)) {
+        ss[1] << line << endl;
+    }
+    ShaderProgramSource src{ ss[0].str(), ss[1].str() };
+    if (src.vertexSource.empty() || src.fragmentSource.empty()) {
+        throw ShaderException(fmt::format(
+            "Shader files {} and {} do not contain both vertex and fragment shaders",
+            vertexSrc, fragmentSrc
+        ));
+    }
+    return src;
 }
 
 Shader& Shader::setUniform4f(const std::string& name, const glm::vec4& v) {
