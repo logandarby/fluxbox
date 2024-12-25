@@ -20,7 +20,7 @@ PointerAlignment: Left
 # BinPackArguments: false
 # BinPackParameters: false
 SpacesInContainerLiterals: false
-Cpp11BracedListStyle: false
+Cpp11BracedListStyle: true
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: Always
 AllowShortBlocksOnASingleLine: Empty

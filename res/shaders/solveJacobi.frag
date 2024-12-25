@@ -7,7 +7,7 @@ in vec2 v_texCoord;
 in vec2 v_leftP, v_rightP, v_topP, v_bottomP;
 
 uniform float u_alpha, u_rBeta;
-uniform sampler2D u_x, u_b; // Ax = b
+uniform sampler2D u_x, u_b; // Ax = b, solve for x
 
 void main() {
     vec4 xLeft = texture2D(u_x, v_leftP);

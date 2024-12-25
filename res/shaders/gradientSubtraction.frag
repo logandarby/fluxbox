@@ -15,6 +15,7 @@ void main() {
     float pRight = texture2D(u_pressure, v_rightP).x;
     float bTop = texture2D(u_pressure, v_topP).x;
     float bBottom = texture2D(u_pressure, v_bottomP).x;
-    vec4 u_newVelocity = texture2D(u_velocity, v_texCoord);
-    u_newVelocity.xy -= u_gridScale * 0.5 * vec2(pRight - pLeft, bTop - bBottom);
+    vec2 gradient = vec2(pRight - pLeft, bTop - bBottom);
+    FragColor = vec4(texture2D(u_velocity, v_texCoord).xyz, 1.0);
+    FragColor.xy -= u_gridScale * 0.5 * gradient;
 }

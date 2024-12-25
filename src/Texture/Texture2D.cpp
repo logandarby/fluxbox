@@ -18,13 +18,13 @@ Texture2D::Texture2D(const std::string& filePath) :
     unbind();
 }
 
-Texture2D::Texture2D(const unsigned int width, const unsigned int height) :
-    m_width{ width }, m_height{ height } {
+Texture2D::Texture2D(const TextureSpecification& spec) :
+    m_width{ spec.width }, m_height{ spec.height } {
     init();
 
     GL_CALL(glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA,
-        GL_UNSIGNED_BYTE, nullptr
+        GL_TEXTURE_2D, 0, spec.internalFormat, m_width, m_height, 0,
+        spec.dataFormat, GL_UNSIGNED_BYTE, nullptr
     ));
 
     unbind();

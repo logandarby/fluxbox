@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Texture/Texture2D.h"
 #include <glm/glm.hpp>
 #include <spdlog/fmt/fmt.h>
 #include <memory>
@@ -43,6 +44,10 @@ public:
 
     Shader& setUniformMat4(const std::string& name, const glm::mat4& mat);
     Shader& setUniformMat3(const std::string& name, const glm::mat3& mat);
+
+    Shader& useTexture(
+        const std::string& name, Texture2D& texture, unsigned int slot
+    );
 
     // void setUniform(std::shared_ptr<Uniform> uniform);
     unsigned int getRenderer() {

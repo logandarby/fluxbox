@@ -1,12 +1,18 @@
 #pragma once
 
 #include "Texture.h"
+#include "../Core/GLCore.h"
 #include "../core/Core.h"
+
+struct TextureSpecification {
+    unsigned int width, height;
+    unsigned int internalFormat = GL_RGBA8, dataFormat = GL_RGBA;
+};
 
 class Texture2D : public Texture {
 public:
     Texture2D(const std::string& filePath);
-    Texture2D(const unsigned int width, const unsigned int height);
+    Texture2D(const TextureSpecification& spec);
     ~Texture2D();
 
     virtual void bind(unsigned int slot = 0) const override;
@@ -17,6 +23,9 @@ public:
     }
     inline unsigned int getHeight() const {
         return m_height;
+    }
+    inline unsigned int getTetxureId() const {
+        return m_rendererId;
     }
 
 private:

@@ -2,8 +2,9 @@
 
 #include "IndexBuffer.h"
 #include "RendererTypes.h"
-#include "Shader.h"
 #include "VertexArray.h"
+
+class Shader;
 
 class Renderer {
 public:

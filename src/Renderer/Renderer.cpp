@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "Shader.h"
 #include "Core/Core.h"
 #include "Core/GLCore.h"
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Renderer/RendererTypes.h"
+#include "Texture/Texture2D.h"
 
 struct FBOSpec {
     unsigned int width;
@@ -17,17 +18,18 @@ public:
 
     void bindFBO() const;
     void bindTexture(unsigned int slot) const;
+    void bindFBOandTexture(unsigned int slot) const;
     void unbind() const;
     int readPixel(int x, int y);
     void setViewport() const;
 
-    inline unsigned int getTextureId() {
-        return m_textureId;
+    inline Texture2D& getTexture() {
+        return m_texture;
     }
 
 private:
     unsigned int m_fboId;
-    unsigned int m_textureId;
+    Texture2D m_texture;
     unsigned int m_depthBufferId;
     unsigned int m_width, m_height;
 };

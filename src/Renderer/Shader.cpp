@@ -201,10 +201,13 @@ Shader& Shader::setUniformMat3(const std::string& name, const glm::mat3& mat) {
     return *this;
 }
 
-// void Shader::setUniform(const std::shared_ptr<Uniform> uniform) {
-//	const int location = getUniformLocation(uniform->getName());
-//	uniform->bind(location);
-// }
+Shader& Shader::useTexture(
+    const std::string& name, Texture2D& texture, unsigned int slot
+) {
+    texture.bind(slot);
+    setUniform1i(name, slot);
+    return *this;
+}
 
 int Shader::getUniformLocation(const std::string& name) {
     if (m_locationMap.find(name) != m_locationMap.end()) {

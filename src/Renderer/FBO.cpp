@@ -2,33 +2,19 @@
 #include "core/GLCore.h"
 
 FBOTex::FBOTex(const FBOSpec& spec) :
-    m_width(spec.width), m_height(spec.height) {
+    m_width(spec.width),
+    m_height(spec.height),
+    m_texture(TextureSpecification{ spec.width, spec.height }) {
     // Generate FBO
     GL_CALL(glGenFramebuffers(1, &m_fboId));
     bindFBO();
 
     // Generate color buffer
-    GL_CALL(glGenTextures(1, &m_textureId));
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, m_textureId));
-
-    GL_CALL(glTexParameteri(
-        GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL::getMagFilter(spec.minSampler)
-    ));
-    GL_CALL(glTexParameteri(
-        GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL::getMagFilter(spec.magSampler)
-    ));
-    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-    );
-    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-    );
-
-    GL_CALL(glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGBA8_SNORM, m_width, m_height, 0, GL_RGBA,
-        GL_UNSIGNED_BYTE, nullptr
-    ));
+    m_texture.bind();
 
     GL_CALL(glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_textureId, 0
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+        m_texture.getTetxureId(), 0
     ));
 
     // Generate depth buffer
@@ -48,14 +34,13 @@ FBOTex::FBOTex(const FBOSpec& spec) :
     }
 
     unbind();
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+    m_texture.unbind();
 }
 
 FBOTex::~FBOTex() {
     unbind();
     GL_CALL(glDeleteRenderbuffers(1, &m_depthBufferId));
     GL_CALL(glDeleteFramebuffers(1, &m_fboId));
-    GL_CALL(glDeleteTextures(1, &m_textureId));
 }
 
 void FBOTex::bindFBO() const {
@@ -64,8 +49,12 @@ void FBOTex::bindFBO() const {
 }
 
 void FBOTex::bindTexture(const unsigned int slot) const {
-    GL_CALL(glActiveTexture(GL_TEXTURE0 + slot));
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, m_textureId));
+    m_texture.bind(slot);
+}
+
+void FBOTex::bindFBOandTexture(unsigned int slot) const {
+    bindFBO();
+    bindTexture(slot);
 }
 
 void FBOTex::unbind() const {
