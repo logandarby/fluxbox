@@ -4,7 +4,8 @@
 #include <fstream>
 #include <sstream>
 
-Shader::Shader(const std::string& fileName) : m_rendererId(0) {
+Shader::Shader(const std::string& fileName) :
+    m_rendererId(0), m_filePath{fileName} {
     LOG_CORE_INFO("Parsing shader file: {}", fileName);
     ShaderProgramSource source = parseShader(fileName);
     m_rendererId = createShader(source);
@@ -22,12 +23,20 @@ Shader::~Shader() {
     GL_CALL(glDeleteProgram(m_rendererId))
 }
 
-void Shader::bind() const {
+void Shader::bind() {
     GL_CALL(glUseProgram(m_rendererId));
+    if (m_setUniforms) {
+        m_setUniforms(*this);
+    }
 }
 
 void Shader::unbind() const {
     GL_CALL(glUseProgram(0));
+}
+
+Shader& Shader::setUniforms(const std::function<void(Shader&)> setUniforms) {
+    m_setUniforms = setUniforms;
+    return *this;
 }
 
 unsigned int Shader::createShader(const ShaderProgramSource& source) {
@@ -105,7 +114,7 @@ ShaderProgramSource Shader::parseShader(const std::string& fileName) {
             fileName
         ));
     }
-    return { ss[0].str(), ss[1].str() };
+    return {ss[0].str(), ss[1].str()};
 }
 
 ShaderProgramSource Shader::parseShader(
@@ -134,7 +143,7 @@ ShaderProgramSource Shader::parseShader(
     while (getline(fragmentStream, line)) {
         ss[1] << line << endl;
     }
-    ShaderProgramSource src{ ss[0].str(), ss[1].str() };
+    ShaderProgramSource src{ss[0].str(), ss[1].str()};
     if (src.vertexSource.empty() || src.fragmentSource.empty()) {
         throw ShaderException(fmt::format(
             "Shader files {} and {} do not contain both vertex and fragment shaders",
@@ -199,6 +208,12 @@ Shader& Shader::setUniformMat3(const std::string& name, const glm::mat3& mat) {
         glUniformMatrix3fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0])
     );
     return *this;
+}
+
+Shader& Shader::useTexture(
+    const std::string& name, FBOTex& texture, unsigned int slot
+) {
+    return useTexture(name, texture.getTexture(), slot);
 }
 
 Shader& Shader::useTexture(

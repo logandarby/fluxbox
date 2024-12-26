@@ -4,7 +4,12 @@
 FBOTex::FBOTex(const FBOSpec& spec) :
     m_width(spec.width),
     m_height(spec.height),
-    m_texture(TextureSpecification{ spec.width, spec.height }) {
+    m_texture(TextureSpecification{
+        .width = spec.width,
+        .height = spec.height,
+        .internalFormat = GL_RGBA32F,
+        .dataFormat = GL_RGBA,
+    }) {
     // Generate FBO
     GL_CALL(glGenFramebuffers(1, &m_fboId));
     bindFBO();
@@ -39,12 +44,14 @@ FBOTex::FBOTex(const FBOSpec& spec) :
 
 FBOTex::~FBOTex() {
     unbind();
+    LOG_CORE_INFO("Deleting FBO: {}", m_fboId);
     GL_CALL(glDeleteRenderbuffers(1, &m_depthBufferId));
     GL_CALL(glDeleteFramebuffers(1, &m_fboId));
 }
 
 void FBOTex::bindFBO() const {
     GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, m_fboId));
+    GL_CALL(glBindRenderbuffer(GL_RENDERBUFFER, m_depthBufferId));
     GL_CALL(glViewport(0, 0, m_width, m_height));
 }
 

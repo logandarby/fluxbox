@@ -12,9 +12,8 @@ void Renderer::clearDepthBuffer() {
 }
 
 void Renderer::draw(
-    const VertexArray& vao, const IndexBuffer& ib, const Shader& shader
+    const VertexArray& vao, const IndexBuffer& ib, Shader& shader
 ) {
-    GL_CALL(glClearColor(0.1f, 0.1f, 0.1f, 1.0f));
     shader.bind();
     vao.bind();
     ib.bind();

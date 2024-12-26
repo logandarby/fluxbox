@@ -26,6 +26,9 @@ public:
     inline Texture2D& getTexture() {
         return m_texture;
     }
+    inline unsigned int getFBOId() const {
+        return m_fboId;
+    }
 
 private:
     unsigned int m_fboId;

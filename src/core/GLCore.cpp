@@ -15,12 +15,12 @@ std::string convertToHex(T i) {
 }
 
 std::unordered_map<GLenum, std::string> errorMsgMap = {
-    { GL_INVALID_ENUM, "Invalid enum" },
-    { GL_INVALID_VALUE, "Invalid value" },
-    { GL_INVALID_OPERATION, "Invalid operation" },
-    { GL_STACK_OVERFLOW, "Stack overflow" },
-    { GL_STACK_UNDERFLOW, "Stack underflow" },
-    { GL_OUT_OF_MEMORY, "Out of memory" },
+    {GL_INVALID_ENUM, "Invalid enum"},
+    {GL_INVALID_VALUE, "Invalid value"},
+    {GL_INVALID_OPERATION, "Invalid operation"},
+    {GL_STACK_OVERFLOW, "Stack overflow"},
+    {GL_STACK_UNDERFLOW, "Stack underflow"},
+    {GL_OUT_OF_MEMORY, "Out of memory"},
 };
 
 bool GLCore::glLogError(

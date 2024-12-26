@@ -11,7 +11,7 @@ public:
     static void clear();
     static void clearDepthBuffer();
     static void draw(
-        const VertexArray& vao, const IndexBuffer& ib, const Shader& shader
+        const VertexArray& vao, const IndexBuffer& ib, Shader& shader
     );
     static void getViewport(int x, int y, int width, int height);
     static void setDepthTest(bool enabled);

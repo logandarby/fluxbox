@@ -28,8 +28,8 @@ MainWindow::MainWindow(
     const int width, const int height, const std::string& name
 ) :
     m_window(nullptr),
-    m_data({ Utils::EMPTY_EVENT_CALLBACK }),
-    m_isRunning{ false } {
+    m_data({Utils::EMPTY_EVENT_CALLBACK}),
+    m_isRunning{false} {
     glfwSetErrorCallback(Utils::glfwErrorCallback);
 
     if (!glfwInit()) throw std::runtime_error("GLFW Could not initialize");

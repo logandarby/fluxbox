@@ -19,15 +19,13 @@ Texture2D::Texture2D(const std::string& filePath) :
 }
 
 Texture2D::Texture2D(const TextureSpecification& spec) :
-    m_width{ spec.width }, m_height{ spec.height } {
+    m_width{spec.width}, m_height{spec.height} {
     init();
-
+    std::vector<GLubyte> data(m_width * m_height * 4, 0);
     GL_CALL(glTexImage2D(
         GL_TEXTURE_2D, 0, spec.internalFormat, m_width, m_height, 0,
-        spec.dataFormat, GL_UNSIGNED_BYTE, nullptr
+        spec.dataFormat, GL_UNSIGNED_BYTE, data.data()
     ));
-
-    unbind();
 }
 
 void Texture2D::init() {
@@ -44,6 +42,7 @@ void Texture2D::init() {
 
 Texture2D::~Texture2D() {
     unbind();
+    LOG_CORE_INFO("Deleting texture {}", m_rendererId);
     glDeleteTextures(1, &m_rendererId);
 }
 

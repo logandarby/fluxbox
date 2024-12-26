@@ -22,9 +22,10 @@ struct SimulationVars {
     float jacobiIterations;
 }
 
-static const DEFAULT_SIMULATION_VARS = SimulationVars{
-    .dissipation = 1.0f, .gridScale = 10.0f, .jacobiIterations = 80
-};
+static const DEFAULT_SIMULATION_VARS =
+    SimulationVars{.dissipation = 1, .gridScale = 1.0f, .jacobiIterations = 10};
+
+static const float DEFAULT_VELOCITY = 1.0f;
 
 class FluidScene : public Scene {
 public:
@@ -32,9 +33,22 @@ public:
         const ApplicationSpec& spec,
         SimulationVars vars = DEFAULT_SIMULATION_VARS
     ) :
-        Scene("FluxLab"), m_spec{spec}, m_vars{vars} {};
+        Scene("FluxLab"),
+        m_spec{spec},
+        m_vars{vars},
+        m_stride{1.0f / spec.width, 1.0f / spec.height} {};
 
     virtual void onInit() override {
+        // Set Uniform Functions for all Shaders
+        // m_advectionShader.setUniforms([&](Shader & sh) {
+        //     sh.setUniform1i("u_field", BUFFER_SLOT)
+        //         .setUniform2f("u_stride", m_stride)
+        //         .setUniform1i("u_velocity", VELOCITY_SLOT)
+        //         .setUniform1f("u_deltaT", timestep)
+        //         .setUniform1f("u_dissipation", m_vars.dissipation)
+        //         .setUniform1f("u_gridScale", 1.0f / m_vars.gridScale);
+        // });
+
         // Draw initial velocity rectangle
         m_velocityFBO.bindTexture(VELOCITY_SLOT);
         m_velocityFBO.bindFBO();
@@ -45,117 +59,150 @@ public:
             .setUniformMat4(
                 "u_model", glm::scale(glm::mat4(1.0f), glm::vec3(0.1f))
             )
-            .setUniform3f("u_color", 10.0f, 10.0f, 0.0f);
-        Renderer::draw(m_screenVAO, m_screenIB, m_colorFragmentShader);
+            .setUniform3f("u_color", DEFAULT_VELOCITY, 0.0f, 0.0f);
+        drawToCurrentFBO(m_colorFragmentShader);
+
+        m_colorFragmentShader
+            .setUniformMat4(
+                "u_model", glm::translate(
+                               glm::scale(glm::mat4(1.0f), glm::vec3(0.1f)),
+                               glm::vec3(5.0f, -5.0f, 0.0f)
+                           )
+            )
+            .setUniform3f("u_color", 0.0f, DEFAULT_VELOCITY, 0.0f);
+        drawToCurrentFBO(m_colorFragmentShader);
+
+        m_colorFragmentShader
+            .setUniformMat4(
+                "u_model", glm::translate(
+                               glm::scale(glm::mat4(1.0f), glm::vec3(0.1f)),
+                               glm::vec3(-5.0f, 5.0f, 0.0f)
+                           )
+            )
+            .setUniform3f("u_color", DEFAULT_VELOCITY, DEFAULT_VELOCITY, 0.0f);
+        drawToCurrentFBO(m_colorFragmentShader);
     };
     virtual void onDetach() override {};
     virtual void onRender(const float timestep, const size_t frameCount)
         override {
-        const glm::vec2 rdv{1.0f / m_spec.width, 1.0f / m_spec.height};
+        m_timestep = timestep;
         Renderer::bindDefaultFramebuffer();
         Renderer::clear();
         if (true) {
-            m_velocityFBO.bindTexture(VELOCITY_SLOT);
-            m_velocityFBO.bindFBO();
-
             // Advect
-            // Bind buffer slow
-            m_bufferFBO.bindFBOandTexture(BUFFER_SLOT);
-            m_copyShader.bind();
-            m_copyShader.useTexture(
-                "u_texture", m_velocityFBO.getTexture(), VELOCITY_SLOT
+            copyToBuffer(
+                m_velocityFBO, VELOCITY_SLOT, m_bufferFBO, BUFFER_SLOT
             );
-            Renderer::draw(m_screenVAO, m_screenIB, m_copyShader);
-
+            goto skipAdvection;
             m_velocityFBO.bindFBOandTexture(VELOCITY_SLOT);
             m_advectionShader.bind();
-            m_advectionShader.setUniform1i("u_field", BUFFER_SLOT)
-                .setUniform1i("u_velocity", VELOCITY_SLOT)
+            m_advectionShader
+                .useTexture("u_field", m_velocityFBO, VELOCITY_SLOT)
+                .useTexture("u_velocity", m_bufferFBO, BUFFER_SLOT)
                 .setUniform1f("u_deltaT", timestep)
                 .setUniform1f("u_dissipation", m_vars.dissipation)
                 .setUniform1f("u_gridScale", 1.0f / m_vars.gridScale);
-            Renderer::draw(m_screenVAO, m_screenIB, m_advectionShader);
+            drawToCurrentFBO(m_advectionShader);
             m_velocityFBO.unbind();
-            // LOG_CORE_INFO(
-            //     "Velocity FBO: {}, Buffer FBO: {}, deltaT {}, dissipation {},
-            //     gridScale {}", VELOCITY_SLOT, BUFFER_SLOT, timestep,
-            //     m_vars.dissipation, m_vars.gridScale
-            // );
+        skipAdvection:
 
             // diffuse
             // add forces (mouse)
 
             // Compute Pressure -- Velocity Divergence
-            // m_divergenceFBO.bindTexture(DIVERGENCE_SLOT);
-            // m_divergenceFBO.bindFBO();
-            // m_velocityFBO.bindTexture(VELOCITY_SLOT);
-            // Renderer::clear();
-            // m_divergenceShader.bind();
-            // m_divergenceShader.setUniform1i("u_field", VELOCITY_SLOT)
-            //     .setUniform2f("u_stride", rdv)
-            //     .setUniform1f("u_gridScale", 1 / m_vars.gridScale);
-            // Renderer::draw(m_screenVAO, m_screenIB, m_divergenceShader);
-            // m_divergenceFBO.unbind();
+            m_divergenceFBO.bindFBOandTexture(DIVERGENCE_SLOT);
+            Renderer::clear();
+            m_divergenceShader.bind();
+            m_divergenceShader
+                .useTexture("u_field", m_velocityFBO, VELOCITY_SLOT)
+                .setUniform2f("u_stride", m_stride)
+                .setUniform1f("u_gridScale", 1.0f / m_vars.gridScale);
+            drawToCurrentFBO(m_divergenceShader);
 
             // Compute Pressure -- Solve for Pressure in Poisson Equation
-            // const float alpha =
-            //     m_vars.gridScale * m_vars.gridScale / (timestep);
-            // const float beta = alpha + 4.0f;
-            // m_pressureFBO.bindTexture(PRESSURE_SLOT);
-            // m_pressureFBO.bindFBO();
-            // Renderer::clear();
-            // for (size_t i = 0; i < m_vars.jacobiIterations; i++) {
-            //     // Copy Pressure
-            //     m_bufferFBO.bindTexture(BUFFER_SLOT);
-            //     m_bufferFBO.bindFBO();
-            //     m_pressureFBO.bindTexture(PRESSURE_SLOT);
-            //     Renderer::clear();
-            //     m_copyShader.bind();
-            //     m_copyShader.setUniform1i("u_texture", PRESSURE_SLOT);
-            //     Renderer::draw(m_screenVAO, m_screenIB, m_copyShader);
+            const float alpha = 1.0 / timestep;
+            const float beta = alpha + 4.0f;
+            LOG_CORE_INFO("Alpha: {}, Beta: {}", alpha, 1 / beta);
+            m_bufferFBO.bindFBOandTexture(BUFFER_SLOT);
+            Renderer::clear();
+            m_pressureFBO.bindFBOandTexture(PRESSURE_SLOT);
+            Renderer::clear();
+            for (size_t i = 0; i < m_vars.jacobiIterations; i++) {
+                // Calculate Pressure Iteration
+                m_bufferFBO.bindFBOandTexture(BUFFER_SLOT);
+                m_poissonShader.bind();
+                m_poissonShader.setUniform1f("u_alpha", alpha)
+                    .setUniform2f("u_stride", m_stride)
+                    .setUniform1f("u_rBeta", 1.0f / beta)
+                    .useTexture(
+                        "u_centerValue", m_divergenceFBO, DIVERGENCE_SLOT
+                    )
+                    .useTexture("u_x", m_pressureFBO, PRESSURE_SLOT);
+                drawToCurrentFBO(m_poissonShader);
 
-            //     // Calculate Pressure Iteration
-            //     m_pressureFBO.bindTexture(PRESSURE_SLOT);
-            //         m_pressureFBO.bindFBO();
-            //         m_bufferFBO.bindTexture(BUFFER_SLOT);
-            //         m_divergenceFBO.bindTexture(DIVERGENCE_SLOT);
-            //         m_poissonShader.bind();
-            //         m_poissonShader.setUniform1f("u_alpha", alpha)
-            //             .setUniform2f("u_stride", rdv)
-            //             .setUniform1f("u_rBeta", 1 / beta)
-            //             .setUniform1i("u_b", DIVERGENCE_SLOT)
-            //             .setUniform1i("u_x", BUFFER_SLOT);
-            //         Renderer::draw(m_screenVAO, m_screenIB, m_poissonShader);
-            //     }
-            //     m_pressureFBO.unbind();
-            //     m_divergenceFBO.unbind();
-            //     m_bufferFBO.unbind();
+                // Copy Pressure
+                copyToBuffer(
+                    m_bufferFBO, BUFFER_SLOT, m_pressureFBO, PRESSURE_SLOT
+                );
+            }
 
-            //     // Compute Pressure --Subtract pressure gradient from poisson
-            //     result m_velocityFBO.bindFBO();
-            //     m_pressureFBO.bindTexture(PRESSURE_SLOT);
-            //     m_velocityFBO.bindTexture(VELOCITY_SLOT);
-            //     m_gradientSubtractShader.bind();
-            //     m_gradientSubtractShader.setUniform1i("u_pressure",
-            //     PRESSURE_SLOT)
-            //         .setUniform1i("u_velocity", VELOCITY_SLOT)
-            //         .setUniform2f("u_stride", rdv)
-            //         .setUniform1f("u_gridScale", 1 / m_vars.gridScale);
-            //     Renderer::draw(m_screenVAO, m_screenIB,
-            //     m_gradientSubtractShader);
+            // copyToBuffer(
+            //     m_velocityFBO, VELOCITY_SLOT, m_bufferFBO, BUFFER_SLOT
+            // );
+
+            copyToBuffer(
+                m_pressureFBO, PRESSURE_SLOT, m_bufferFBO, BUFFER_SLOT
+            );
+
+            // Compute Pressure --Subtract pressure gradient from poisson
+            m_velocityFBO.bindFBOandTexture(VELOCITY_SLOT);
+            m_gradientSubtractShader.bind();
+            m_gradientSubtractShader
+                .useTexture("u_pressure", m_pressureFBO, PRESSURE_SLOT)
+                .useTexture("u_velocity", m_bufferFBO, BUFFER_SLOT)
+                .setUniform2f("u_stride", m_stride)
+                .setUniform1f("u_gridScale", 1 / m_vars.gridScale);
+            drawToCurrentFBO(m_gradientSubtractShader);
+            // m_enabled = false;
         }
+    skipPressure:
         Renderer::bindDefaultFramebuffer();
         Renderer::setDepthTest(false);
-        // m_pressureFBO.bindTexture(PRESSURE_SLOT);
         m_framebufferShader.bind();
-        m_framebufferShader.useTexture(
-            "u_texture", m_velocityFBO.getTexture(), VELOCITY_SLOT
-        );
-        Renderer::draw(m_screenVAO, m_screenIB, m_framebufferShader);
+        m_framebufferShader
+            .useTexture("u_texture", m_pressureFBO, PRESSURE_SLOT)
+            .setUniform2f("u_stride", m_stride);
+        drawToCurrentFBO(m_framebufferShader);
     };
-    virtual void onEvent(Event& event) override {};
+    virtual void onEvent(Event& event) override {
+        EventDispatcher dispathcer(event);
+        dispathcer.dispatch<KeyPressEvent>([&](KeyPressEvent& e) {
+            if (e.getKeyCode() == GL::KeyCode::SPACE) {
+                m_enabled = !m_enabled;
+                return true;
+            }
+            return false;
+        });
+    };
 
 private:
+    void drawToCurrentFBO(Shader& shader) {
+        Renderer::draw(m_screenVAO, m_screenIB, shader);
+    }
+    void copyToBuffer(
+        FBOTex& from, unsigned int fromSlot, FBOTex& to, unsigned int toSlot
+    ) {
+        to.bindFBOandTexture(toSlot);
+        Renderer::clear();
+        m_copyShader.bind();
+        m_copyShader.useTexture("u_texture", from, fromSlot);
+        drawToCurrentFBO(m_copyShader);
+    }
+
+private:
+    bool m_enabled = true;
+    float m_timestep = 1.0f / 60.0f;
+    glm::vec2 m_stride;
     ApplicationSpec m_spec;
     SimulationVars m_vars;
     RectangleModel2D m_screenQuad;

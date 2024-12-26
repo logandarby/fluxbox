@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FBO.h"
 #include "Texture/Texture2D.h"
 #include <glm/glm.hpp>
 #include <spdlog/fmt/fmt.h>
@@ -27,8 +28,11 @@ public:
     Shader(const std::string& vertexSrc, const std::string& fragmentSrc);
     ~Shader();
 
-    void bind() const;
+    void bind();
     void unbind() const;
+
+    // Set a uniform function that sets on every bind
+    Shader& setUniforms(std::function<void(Shader&)> setUniforms);
 
     // Set primitive Uniforms
     Shader& setUniform4f(
@@ -48,6 +52,9 @@ public:
     Shader& useTexture(
         const std::string& name, Texture2D& texture, unsigned int slot
     );
+    Shader& useTexture(
+        const std::string& name, FBOTex& texture, unsigned int slot
+    );
 
     // void setUniform(std::shared_ptr<Uniform> uniform);
     unsigned int getRenderer() {
@@ -56,8 +63,11 @@ public:
 
 private:
     unsigned int m_rendererId;
+    std::string m_filePath;
     std::unordered_map<std::string, int> m_locationMap;
+    std::function<void(Shader&)> m_setUniforms;
 
+private:
     static unsigned int createShader(const ShaderProgramSource& source);
     static unsigned int compileShader(
         const unsigned int shaderType, const std::string& source
